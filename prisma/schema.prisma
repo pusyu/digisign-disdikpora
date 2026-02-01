@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPERADMIN
+  SIGNER
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Certificate {
+  id              String           @id @default(uuid())
+  ownerName       String
+  eventName       String
+  issueDate       DateTime
+  signerName      String
+  signerPosition  String
+  pdfName         String
+  pdfUrl          String?
+  algorithm       String?
+  publicKey       String?
+  status          ApprovalStatus   @default(PENDING)
+  approvals       Approval[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model User {
+  id        String     @id @default(uuid())
+  username  String     @unique
+  password  String
+  name      String?
+  position  String?
+  image     String?
+  role      Role       @default(SIGNER)
+  approvals Approval[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Approval {
+  id            String         @id @default(uuid())
+  certificateId String
+  userId        String
+  status        ApprovalStatus @default(PENDING)
+  comment       String?
+  certificate   Certificate    @relation(fields: [certificateId], references: [id], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@unique([certificateId, userId])
+}
