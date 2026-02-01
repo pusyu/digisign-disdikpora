@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { put } from '@vercel/blob';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 
@@ -24,15 +25,24 @@ export async function POST(request: Request) {
         const file = formData.get('file') as File;
         let pdfUrl = '';
 
-        // 1. Save File to Local Storage
+        // 1. Save File
         if (file) {
-            const buffer = Buffer.from(await file.arrayBuffer());
             const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
 
-            const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'certificates');
-            await mkdir(uploadDir, { recursive: true });
-            await writeFile(path.join(uploadDir, fileName), buffer);
-            pdfUrl = `/uploads/certificates/${fileName}`;
+            // Check if we should use Vercel Blob or Local
+            if (process.env.BLOB_READ_WRITE_TOKEN) {
+                const blob = await put(`certificates/${fileName}`, file, {
+                    access: 'public',
+                });
+                pdfUrl = blob.url;
+            } else {
+                // Local Storage
+                const buffer = Buffer.from(await file.arrayBuffer());
+                const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'certificates');
+                await mkdir(uploadDir, { recursive: true });
+                await writeFile(path.join(uploadDir, fileName), buffer);
+                pdfUrl = `/uploads/certificates/${fileName}`;
+            }
         }
 
         // 2. Create DB Record
