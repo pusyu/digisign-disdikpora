@@ -75,6 +75,8 @@ export default function IndependentAnalysisPage() {
     const [isTesting, setIsTesting] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
     const [lastSha128Time, setLastSha128Time] = useState<number | null>(null);
+    const [testCount, setTestCount] = useState(5);
+
 
     // Result & Trace state for each algorithm
     const [algoLogs, setAlgoLogs] = useState<Record<string, any[]>>({
@@ -183,8 +185,7 @@ export default function IndependentAnalysisPage() {
             return { e, w, u1, u2, r, s };
         };
 
-        // Generate fixed 5 data variations
-        const testCount = 5;
+        // Generate dynamic data variations based on user request
         const currentDataBatch = [];
         for (let i = 0; i < testCount; i++) {
             currentDataBatch.push({
@@ -336,8 +337,19 @@ export default function IndependentAnalysisPage() {
                 </div>
 
                 <div className="flex items-center gap-6">
-                    <div className="px-6 py-2 border border-[#222] bg-[#111] rounded-full text-[10px] font-black uppercase text-zinc-400 tracking-widest">
-                        Mode: 5 Data Stream
+                    <div className="flex items-center gap-3 px-6 py-2 border border-[#222] bg-[#111] rounded-full">
+                        <span className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Data Stream:</span>
+                        <input
+                            type="number"
+                            value={testCount}
+                            onChange={(e) => {
+                                const val = parseInt(e.target.value);
+                                setTestCount(isNaN(val) ? 1 : Math.min(1000, Math.max(1, val)));
+                            }}
+                            className="bg-transparent border-none text-[10px] font-black text-white w-12 focus:outline-none text-center"
+                            min="1"
+                            max="1000"
+                        />
                     </div>
 
                     <button
