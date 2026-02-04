@@ -11,9 +11,6 @@
     "lint": "next lint",
     "postinstall": "prisma generate"
   },
-  "prisma": {
-    "seed": "node prisma/seed-admin.js"
-  },
   "dependencies": {
     "@prisma/client": "^6.19.1",
     "@types/bcryptjs": "^2.4.6",
