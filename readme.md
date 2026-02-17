@@ -2,7 +2,7 @@
 
 Sistem Manajemen Sertifikat Digital yang aman, efisien, dan modern. Proyek ini dikembangkan untuk mempermudah proses pembuatan, penandatanganan, verifikasi, dan distribusi sertifikat digital menggunakan teknologi web terkini.
 
-## 🚀 Fitur Utama
+## Fitur Utama
 
 ### 1. **Pembuatan & Upload Sertifikat**
 *   **Editor Drag-and-Drop:** Upload file PDF dan tambahkan elemen (QR Code, tanda tangan, teks) secara visual.
@@ -31,7 +31,7 @@ Sistem Manajemen Sertifikat Digital yang aman, efisien, dan modern. Proyek ini d
 
 ---
 
-## 🛠 Teknologi yang Digunakan
+## Teknologi yang Digunakan
 
 *   **Framework:** [Next.js 15](https://nextjs.org/) (App Directory)
 *   **Language:** [TypeScript](https://www.typescriptlang.org/)
@@ -44,7 +44,7 @@ Sistem Manajemen Sertifikat Digital yang aman, efisien, dan modern. Proyek ini d
 
 ---
 
-## 📦 Prasyarat
+## Prasyarat
 
 Pastikan Anda telah menginstal:
 *   **Node.js** (Versi 18 atau terbaru)
@@ -54,7 +54,7 @@ Pastikan Anda telah menginstal:
 
 ---
 
-## 🔧 Cara Instalasi & Menjalankan Proyek
+## Cara Instalasi & Menjalankan Proyek
 
 Ikuti langkah-langkah ini untuk menjalankan proyek di perangkat Anda:
 
@@ -100,7 +100,7 @@ Akses aplikasi di [http://localhost:3000](http://localhost:3000).
 
 ---
 
-## 🌐 Menjalankan dengan HTTPS via ngrok
+## Menjalankan dengan HTTPS via ngrok
 
 Fitur **QR Scanner** memerlukan HTTPS untuk mengakses kamera. Gunakan **ngrok** untuk membuat tunnel HTTPS.
 
@@ -143,13 +143,13 @@ Setelah ngrok berjalan, Anda akan melihat output seperti:
 Forwarding    https://abc123xyz.ngrok-free.app -> http://localhost:3000
 ```
 
-✅ Gunakan URL `https://abc123xyz.ngrok-free.app` untuk mengakses aplikasi dengan HTTPS!
+Gunakan URL `https://abc123xyz.ngrok-free.app` untuk mengakses aplikasi dengan HTTPS!
 
 > **Catatan:** Saat pertama kali dibuka, ngrok akan menampilkan halaman "Visit Site" - klik tombol tersebut untuk lanjut ke aplikasi.
 
 ---
 
-## 🔐 Akun Default
+## Akun Default
 
 Setelah database di-seed, gunakan akun berikut untuk login:
 
@@ -161,7 +161,7 @@ Setelah database di-seed, gunakan akun berikut untuk login:
 
 ---
 
-## 🔄 Update Proyek
+## Update Proyek
 
 Untuk mengambil update terbaru dari repository:
 ```bash
@@ -173,7 +173,7 @@ npm run dev
 
 ---
 
-## 📂 Struktur Folder
+## Struktur Folder
 
 *   `app/`: Pages dan API Routes (Next.js App Router).
 *   `components/`: Komponen UI reusable (Sidebar, PDF viewer, dll).
@@ -184,7 +184,7 @@ npm run dev
 
 ---
 
-## ⚠️ Troubleshooting
+## Troubleshooting
 
 ### Database tidak terkoneksi
 - Pastikan MySQL sudah berjalan (cek XAMPP)
@@ -201,7 +201,7 @@ taskkill //F //IM ngrok.exe
 
 ---
 
-## 🤝 Kontribusi
+## Kontribusi
 
 Proyek ini dikembangkan sebagai bagian dari Skripsi. Tidak untuk distribusi komersial tanpa izin.
 

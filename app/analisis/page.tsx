@@ -27,7 +27,10 @@ import {
     Hash,
     Key,
     PenTool,
-    RefreshCw
+    RefreshCw,
+    Download,
+    FileSpreadsheet,
+    Upload
 } from 'lucide-react';
 import {
     ecdsaSha128,
@@ -38,6 +41,7 @@ import {
 } from '@/lib/crypto';
 import { sha128, bytesToHex } from '@/lib/crypto/sha128.js';
 import { blake2b } from '@/lib/crypto/blake2b.js';
+import * as XLSX from 'xlsx';
 
 // Configuration for algorithms
 const ALGO_CONFIG = {
@@ -75,10 +79,6 @@ export default function IndependentAnalysisPage() {
     const [isTesting, setIsTesting] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
     const [lastSha128Time, setLastSha128Time] = useState<number | null>(null);
-    const [testCount, setTestCount] = useState(5);
-
-
-    // Result & Trace state for each algorithm
     const [algoLogs, setAlgoLogs] = useState<Record<string, any[]>>({
         [ALGORITHMS.ECDSA_SHA128]: [],
         [ALGORITHMS.ECDSA_NO_HASH]: [],
@@ -91,21 +91,54 @@ export default function IndependentAnalysisPage() {
     // Modal state for popup data view
     const [selectedData, setSelectedData] = useState<{ algoName: string; data: any } | null>(null);
 
-    // Metadata State
-    const [metadata, setMetadata] = useState({
-        holder_name: "Putri Suci Renita",
-        event_name: "Workshop Keamanan Siber 2026",
-        issue_date: "2026-01-01",
-        signer_name: "Admin Disdikpora",
-        signer_position: "Kepala Bidang IT",
-        timestamp: "2026-01-01T00:00:00.000Z"
-    });
+    // Excel Data State
+    const [excelData, setExcelData] = useState<any[]>([]);
+    const [fileName, setFileName] = useState<string>("");
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         setIsMounted(true);
     }, []);
 
+    const handleExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setFileName(file.name);
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const bstr = event.target?.result;
+            const workbook = XLSX.read(bstr, { type: 'binary' });
+            const workSheetName = workbook.SheetNames[0];
+            const workSheet = workbook.Sheets[workSheetName];
+            const data = XLSX.utils.sheet_to_json(workSheet);
+            setExcelData(data);
+        };
+        reader.readAsBinaryString(file);
+    };
+
+    const downloadTemplate = () => {
+        const template = [
+            {
+                holder_name: "Contoh Nama",
+                event_name: "Workshop Keamanan Siber 2026",
+                issue_date: "2026-01-01",
+                signer_name: "Admin Disdikpora",
+                signer_position: "Kepala Bidang IT"
+            }
+        ];
+        const ws = XLSX.utils.json_to_sheet(template);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Template");
+        XLSX.writeFile(wb, "template_analisis_sertifikat.xlsx");
+    };
+
     const runAllTests = async () => {
+        if (excelData.length === 0) {
+            alert("Silakan upload file Excel terlebih dahulu.");
+            return;
+        }
+
         setIsTesting(true);
         const newLogs: Record<string, any[]> = {};
         const newMetrics: Record<string, any> = {};
@@ -185,14 +218,15 @@ export default function IndependentAnalysisPage() {
             return { e, w, u1, u2, r, s };
         };
 
-        // Generate dynamic data variations based on user request
-        const currentDataBatch = [];
-        for (let i = 0; i < testCount; i++) {
-            currentDataBatch.push({
-                ...metadata,
-                holder_name: `${metadata.holder_name} #${i + 1}`
-            });
-        }
+        // Use data from Excel
+        const currentDataBatch = excelData.map(row => ({
+            holder_name: row.holder_name || "N/A",
+            event_name: row.event_name || "N/A",
+            issue_date: row.issue_date || "N/A",
+            signer_name: row.signer_name || "N/A",
+            signer_position: row.signer_position || "N/A",
+            timestamp: new Date().toISOString()
+        }));
 
         const keys = Object.keys(ALGO_CONFIG);
 
@@ -337,30 +371,19 @@ export default function IndependentAnalysisPage() {
                 </div>
 
                 <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-3 px-6 py-2 border border-[#222] bg-[#111] rounded-full">
-                        <span className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Data Stream:</span>
-                        <input
-                            type="number"
-                            value={testCount}
-                            onChange={(e) => {
-                                const val = parseInt(e.target.value);
-                                setTestCount(isNaN(val) ? 1 : Math.min(1000, Math.max(1, val)));
-                            }}
-                            className="bg-transparent border-none text-[10px] font-black text-white w-12 focus:outline-none text-center"
-                            min="1"
-                            max="1000"
-                        />
-                    </div>
+
 
                     <button
                         onClick={runAllTests}
-                        disabled={isTesting}
-                        className="w-20 h-20 rounded-full border-2 border-white flex items-center justify-center hover:bg-white hover:text-black transition-all group relative active:scale-95"
+                        disabled={isTesting || excelData.length === 0}
+                        className={`w-20 h-20 rounded-full border-2 flex items-center justify-center transition-all group relative active:scale-95 ${excelData.length === 0 ? 'border-[#333] text-zinc-600 grayscale' : 'border-white text-white hover:bg-white hover:text-black'}`}
                     >
                         {isTesting ? <RefreshCw className="animate-spin" size={24} /> : (
                             <>
                                 <span className="text-[10px] uppercase font-black tracking-tighter text-center">Run<br />Lab</span>
-                                <div className="absolute inset-0 rounded-full border border-white/20 animate-ping"></div>
+                                {!isTesting && excelData.length > 0 && (
+                                    <div className="absolute inset-0 rounded-full border border-white/20 animate-ping"></div>
+                                )}
                             </>
                         )}
                     </button>
@@ -368,22 +391,79 @@ export default function IndependentAnalysisPage() {
             </header>
 
             <main className="px-10 py-10 space-y-12 max-w-[1600px] mx-auto">
-                {/* Manual Metadata Input */}
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 border border-[#222] p-8 bg-[#0a0a0a] rounded-sm shadow-2xl relative z-10">
-                    <div className="absolute top-0 right-0 p-2 opacity-5">
-                        <Edit3 size={40} />
+                {/* Excel Upload & Template Section */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center border border-[#222] p-8 bg-[#0a0a0a] rounded-sm shadow-2xl relative z-10 overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                        <FileSpreadsheet size={80} />
                     </div>
-                    {isMounted && Object.keys(metadata).map((key) => (
-                        <div key={key} className="flex flex-col gap-2">
-                            <label className="text-[9px] uppercase text-zinc-500 font-bold tracking-[0.2em]">{key.replace('_', ' ')}</label>
-                            <input
-                                type="text"
-                                value={(metadata as any)[key]}
-                                onChange={(e) => setMetadata(prev => ({ ...prev, [key]: e.target.value }))}
-                                className="bg-transparent border-b border-[#222] py-2 text-[11px] font-mono focus:outline-none focus:border-white transition-all text-zinc-300"
-                            />
+
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-[#111] border border-[#222] flex items-center justify-center">
+                                <Upload size={18} className="text-zinc-400" />
+                            </div>
+                            <div>
+                                <h2 className="text-sm font-black uppercase tracking-widest text-white">Upload Data Analisis</h2>
+                                <p className="text-[10px] text-zinc-500 uppercase tracking-tighter">Gunakan format Excel (.xlsx / .xls) untuk pengujian massal.</p>
+                            </div>
                         </div>
-                    ))}
+
+                        <div className="flex flex-wrap items-center gap-4 pt-2">
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleExcelUpload}
+                                accept=".xlsx, .xls"
+                                className="hidden"
+                            />
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                className="px-6 py-3 border border-white bg-white text-black text-[10px] font-black uppercase tracking-widest hover:bg-transparent hover:text-white transition-all flex items-center gap-2"
+                            >
+                                <Upload size={14} />
+                                {fileName ? 'Ganti File Excel' : 'Pilih File Excel'}
+                            </button>
+
+                            <button
+                                onClick={downloadTemplate}
+                                className="px-6 py-3 border border-[#333] text-zinc-400 text-[10px] font-black uppercase tracking-widest hover:bg-[#111] hover:text-white transition-all flex items-center gap-2"
+                            >
+                                <Download size={14} />
+                                Download Template
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="border-l border-[#222] pl-10 h-full flex flex-col justify-center">
+                        <div className="space-y-2">
+                            <span className="text-[9px] uppercase font-bold text-zinc-600 tracking-[0.3em]">Status Dokumen:</span>
+                            {excelData.length > 0 ? (
+                                <div className="flex items-center gap-4">
+                                    <div className="flex flex-col">
+                                        <span className="text-2xl font-black text-emerald-400">{excelData.length}</span>
+                                        <span className="text-[8px] uppercase text-zinc-500 font-bold tracking-widest">Baris Terdeteksi</span>
+                                    </div>
+                                    <div className="w-px h-8 bg-[#222]"></div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-mono text-zinc-300 truncate max-w-[200px]">{fileName}</span>
+                                        <span className="text-[8px] uppercase text-emerald-500/50 font-bold tracking-widest flex items-center gap-1">
+                                            <CheckCircle2 size={8} /> Ready for Stress Test
+                                        </span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-4 opacity-50">
+                                    <div className="flex flex-col">
+                                        <span className="text-2xl font-black text-zinc-800">00</span>
+                                        <span className="text-[8px] uppercase text-zinc-700 font-bold tracking-widest">No Data</span>
+                                    </div>
+                                    <p className="text-[10px] text-zinc-600 leading-relaxed max-w-[250px] uppercase font-bold italic tracking-tighter">
+                                        Silakan upload file untuk memulai kalkulasi performa algoritma.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
                 {/* 4 Column Processor Grid */}
@@ -671,7 +751,7 @@ export default function IndependentAnalysisPage() {
             </main>
 
             <footer className="p-10 text-center border-t border-[#222] mt-10 opacity-30">
-                <div className="text-[10px] uppercase font-black tracking-widest">© 2026 CRYPTOGRAPHIC RESEARCH LABS</div>
+                <div className="text-[10px] uppercase font-black tracking-widest">© 2026 Skripsi - Putri Suci Renita</div>
                 <div className="flex justify-center gap-6 mt-4">
                     <Link href="/dashboard" className="text-[8px] uppercase font-black hover:text-white transition-colors">Return to System</Link>
                     <span className="text-[8px] uppercase font-black">Build v2.1.0-STABLE</span>
